@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- icon -->
+    <link rel="icon" href="./icon_cv.jpg">
+    <title>CV - Style Terminal Linux avec Sidebar</title>
+    <style>
+        /* Style général */
+        body {
+            background-color: #2d2d2d;
+            color: #00ff00;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 16px;
+            line-height: 2;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        ::selection {
+            background-color: #00ff00;
+            /* couleur de fond lors de la sélection */
+            color: aliceblue;
+            /* couleur du texte sélectionné */
+        }
+
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            width: 0;
+            background-color: #1e1e1e;
+            padding: 20px;
+            border-right: 2px solid #00ff00;
+            top: 0;
+            left: 0;
+            height: 100%;
+            transition: all 0.6s ease;
+            overflow: hidden;
+            transform: translateX(-100%);
+
+        }
+
+        .sidebar.show {
+            width: 200px;
+            transform: translateX(0);
+
+        }
+
+        .sidebar h2 {
+            color: #00ff00;
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+
+        .sidebar ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+            opacity: 0;
+
+            transition: opacity 0.3s ease, visibility 0.3s ease, transform 0.3s ease;
+        }
+
+        .sidebar.show ul {
+            opacity: 1;
+        }
+
+        .sidebar ul:nth-child(1) {
+            margin-top: 70px;
+        }
+
+        .sidebar ul li {
+            margin: 15px 0;
+        }
+
+        .sidebar ul li:hover {
+            background-color: #00ff00;
+
+        }
+
+        .sidebar ul li a {
+            text-decoration: none;
+            padding: 10px;
+            display: block;
+            background-color: transparent;
+            transition: background-color 0.3s;
+            transition: all 0.3s ease;
+        }
+
+
+        .sidebar ul li a.clicked {
+            background-color: #00ff00;
+            color: #000;
+
+        }
+
+        .sidebar ul li a:hover {
+            color: #000;
+            transform: translateX(12px);
+        }
+
+        /* Fenêtre principale */
+        .main-window {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            margin-left: 50px;
+
+            transition: margin-left 0.5s ease;
+        }
+
+        /* Fenêtre de contenu */
+        .content-window {
+            background-color: #000;
+            padding: 0px 15px 20px 50px;
+            border-radius: 5px;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
+            flex: 1;
+            overflow-y: auto;
+
+        }
+
+        .main-window .command {
+            margin-left: 10px;
+            margin-top: 10px;
+            color: #00ff00;
+            font-size: 14px;
+        }
+
+        .main-window #home .descibe,
+        a {
+            color: aliceblue;
+        }
+
+        .main-window #formation {
+            line-height: 3;
+        }
+
+        .main-window #formation ul {
+            color: aliceblue;
+        }
+
+        .main-window #formation ul em {
+            font-size: 12px;
+        }
+
+        .main-window #competences ul {
+            list-style-type: none;
+            /* Supprime les puces */
+            padding: 0;
+        }
+
+        .main-window #competences ul li {
+            padding: 5px 0;
+            color: aliceblue;
+        }
+
+        .main-window #competences strong {
+            color: #00ff00;
+            /* Bleu LinkedIn, par exemple */
+        }
+
+        /* Conteneur principal de la section Langues */
+        .main-window #langues .langues-container {
+            padding: 20px;
+            background-color: #000;
+            color: #00ff00;
+            /* Texte vert style terminal */
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 255, 0, 0.5);
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        /* Titre de la section Langues */
+        .main-window #langues .langues-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        /* Liste des langues */
+        .main-window #langues .langues-list {
+            list-style-type: disc;
+            padding-left: 20px;
+            margin-top: 10px;
+            color: aliceblue;
+        }
+
+        /* Style des éléments de la liste */
+        .main-window #langues .langues-list li {
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+
+        /* Titres */
+        h1 {
+
+            color: #00ff00;
+            margin-bottom: 20px;
+        }
+
+        /* Liens */
+        a {
+
+            text-decoration: underline;
+        }
+
+        a:hover {
+            color: #00cc00;
+        }
+
+        /* Animation de clignotement du curseur */
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0;
+            }
+        }
+
+        .cursor {
+            display: inline-block;
+            width: 10px;
+            height: 20px;
+            background-color: #00ff00;
+            animation: blink 1s infinite;
+        }
+
+        /* Icône de basculement pour afficher/cacher la sidebar */
+        .toggle-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 30px;
+            background-color: transparent;
+            color: #00ff00;
+            border: none;
+            cursor: pointer;
+            z-index: 100;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-btn:focus {
+            outline: none;
+        }
+
+        .main-window.sidebar-visible {
+            margin-left: 240px;
+        }
+
+        /* Icônes spécifiques */
+        .open-icon {
+            display: block;
+        }
+
+        .close-icon {
+            display: none;
+        }
+
+        .toggle-btn.open .open-icon {
+            display: none;
+        }
+
+        .toggle-btn.open .close-icon {
+            display: block;
+        }
+
+        /* Media Queries pour la réactivité */
+
+        /* Pour les écrans de petite taille (mobile) */
+        @media (max-width: 768px) {
+            body {
+                font-size: 14px;
+                /* Réduire la taille de la police */
+            }
+
+            .sidebar.show {
+                width: 135px;
+                /* Réduire la largeur de la sidebar */
+            }
+
+            .main-window.sidebar-visible {
+                margin-left: 170px;
+                /* Ajuster la marge pour la sidebar réduite */
+            }
+
+            .toggle-btn {
+                font-size: 24px;
+                /* Réduire la taille de l'icône */
+            }
+
+            .content-window {
+                padding: 10px;
+                /* Réduire le padding */
+            }
+
+            h1 {
+                font-size: 24px;
+                /* Ajuster la taille du titre */
+            }
+        }
+
+        /* Pour les écrans de taille moyenne (tablette) */
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .sidebar.show {
+                width: 180px;
+                /* Ajuster la largeur de la sidebar */
+            }
+
+            .main-window.sidebar-visible {
+                margin-left: 200px;
+                /* Ajuster la marge pour la sidebar */
+            }
+
+            .content-window {
+                padding: 15px;
+                /* Ajuster le padding */
+            }
+
+            h1 {
+                font-size: 28px;
+                /* Ajuster la taille du titre */
+            }
+        }
+
+        /* Pour les écrans larges (bureau) */
+        @media (min-width: 1025px) {
+            .sidebar.show {
+                width: 200px;
+                /* Largeur par défaut */
+            }
+
+            .main-window.sidebar-visible {
+                margin-left: 240px;
+                /* Marge par défaut */
+            }
+        }
+
+        /* Barre de titre */
+        .window-titlebar {
+            background-color: #1e1e1e;
+            padding: 10px;
+            display: flex;
+            align-items: center;
+            border-bottom: 2px solid #00ff00;
+        }
+
+        /* Conteneur des boutons de contrôle */
+        .window-controls {
+            display: flex;
+            gap: 8px;
+            margin-right: 10px;
+        }
+
+        /* Boutons de contrôle macOS */
+        .window-control {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .window-control.close {
+            background-color: #ff5f56;
+        }
+
+        .window-control.close:hover {
+            background-color: #ff3b30;
+        }
+
+        .window-control.minimize {
+            background-color: #ffbd2e;
+        }
+
+        .window-control.minimize:hover {
+            background-color: #ffa500;
+        }
+
+        .window-control.maximize {
+            background-color: #27c93f;
+        }
+
+        .window-control.maximize:hover {
+            background-color: #1d9b2f;
+        }
+
+        /* Titre de la fenêtre */
+        .window-title {
+            color: #00ff00;
+            font-size: 14px;
+            flex: 1;
+            text-align: center;
+        }
+
+        ::-webkit-scrollbar {
+            width: 0px;
+        }
+
+        .social-icons {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+
+            padding: 10px 0;
+        }
+
+        .social-icons a {
+            position: relative;
+            /* Permet d'afficher le tooltip en relation avec chaque icône */
+            font-size: 40px;
+            color: #00ff00;
+            margin-left: 30px;
+            transition: color 0.3s ease-in-out;
+            text-decoration: none;
+        }
+
+        /* Changement de couleur au survol */
+        .social-icons a:hover {
+            color: aliceblue;
+        }
+
+        /* Ajout du tooltip au survol */
+        .social-icons a::after {
+            content: attr(data-tooltip);
+            /* Récupère le texte depuis l'attribut HTML */
+            position: absolute;
+            bottom: -40px;
+            /* Ajuste la position sous l'icône */
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: transparent;
+            color: aliceblue;
+            padding: 5px 10px;
+            font-size: 14px;
+            border-radius: 5px;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease-in-out, transform 0.2s ease-in-out;
+            pointer-events: none;
+            /* Empêche d'interagir avec le tooltip */
+        }
+
+        /* Affichage du tooltip au survol */
+        .social-icons a:hover::after {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(-50%) translateY(-5px);
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Icône de basculement -->
+    <button id="toggle-btn" class="toggle-btn">
+        <i class="fas fa-bars open-icon"></i>
+        <i class="fas fa-times close-icon"></i>
+    </button>
+
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <ul>
+            <li><a href="#home" onclick="showSection('home')">About</a></li>
+            <li><a href="#formation" onclick="showSection('formation')">Formation</a></li>
+            <li><a href="#Education" onclick="showSection('Education')">Education</a></li>
+            <li><a href="#competences" onclick="showSection('competences')">Compétences</a></li>
+            <li><a href="#langues" onclick="showSection('langues')">Langues</a>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Fenêtre principale -->
+    <div class="main-window" id="main-window">
+
+        <!-- Barre de titre avec boutons macOS -->
+        <div class="window-titlebar">
+            <div class="window-controls">
+                <button class="window-control close"></button>
+                <button class="window-control minimize"></button>
+                <button class="window-control maximize"></button>
+            </div>
+            <span class="window-title">Curriculum Vitae.</span>
+        </div>
+        <!-- Fenêtre de contenu -->
+        <div class="content-window" id="content-window">
+            <div id="home">
+                <h1>OUISSAM BENALLA</h1>
+                <p class="descibe">Étudiant en Intelligence Artificielle et Ingénierie Logicielle Fullstack, passionné
+                    par le développement d'applications intelligentes</p>
+
+                <p>
+                    <i class="fas fa-envelope"></i>
+                    Email: <a href="mailto:ouissambenalla.ia@example.com">ouissambenalla.ia@example.com</a>
+                </p>
+
+                <p>
+                    <i class="fas fa-phone"></i>
+                    Téléphone: <a href="tel:+212652428969">+212 652 428 969</a>
+                </p>
+
+                <div class="social-icons">
+                    <a href="https://www.linkedin.com/in/ouissam-benalla-359357322?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app"
+                        target="_blank" data-tooltip="Linkedin"><i class="fab fa-linkedin"></i></a>
+                    <a href="https://github.com/ouissambenalla988" target="_blank" data-tooltip="Github"><i
+                            class="fab fa-github"></i></a>
+                    <a href="https://www.kaggle.com/ouissambenalla" target="_blank" data-tooltip="Kaggle"><i
+                            class="fab fa-kaggle"></i></a>
+                    <!-- Bouton pour exporter le fichier -->
+                    <!-- <a href="cvEng.pdf" download="Mon_CV.pdf" target="_blank" data-tooltip="Export CV"
+                        class="export-btn">
+                        <i class="fas fa-download"></i>
+                    </a> -->
+
+                </div>
+
+
+            </div>
+
+
+            <div id="Education" style="display: none;">
+                <h2>Éducation:</h2>
+                <ul>
+                    <li><strong>Étudiant en École d'Ingénieurs, Filière IATD-SI</strong> - ENSAM (École Nationale
+                        Supérieure d'Arts et
+                        Métiers), Meknès<br><em>Septembre 2022 - En cours</em></li>
+                </ul>
+
+            </div>
+
+            <div id="formation" style="display: none;">
+                <h2>Formation:</h2>
+                <ul>
+                    <li><strong>Étudiant en École d'Ingénieurs, Filière IATD-SI</strong> - <a
+                            href="http://www.ensam-umi.ac.ma/" target="_blank">ENSAM</a> (École
+                        Nationale
+                        Supérieure d'Arts et
+                        Métiers), Meknès<br><em>Septembre 2022 - En cours</em></li>
+                </ul>
+            </div>
+
+            <div id="competences" style="display: none;">
+                <h2>Compétences</h2>
+                <ul>
+                    <li><strong>Langages de programmation :</strong> Python, Java, JavaScript, C++, PHP</li>
+                    <li><strong>Intelligence Artificielle & Machine Learning :</strong>
+                        Deep Learning, NLP, Vision par ordinateur, Algorithmes ML, Applications industrielles d’IA</li>
+                    <li><strong>Technologies Web :</strong> HTML5, CSS3, React.js, Django, Node.js, PHP, MySQL, SQLite,
+                        PostgreSQL, Java/Spring Boot, APIs RESTful</li>
+                    <li><strong>Outils de Développement :</strong> Git & GitHub, Docker, Linux, VS Code, PyCharm</li>
+                </ul>
+
+            </div>
+
+            <div id="langues" style="display: none;" class="langues-container">
+                <h2 class="langues-title">Langues:</h2>
+                <ul class="langues-list">
+                    <li>Français - Courant</li>
+                    <li>Anglais - Intermédiaire</li>
+                    <li>Arabe - Avancé</li>
+                </ul>
+            </div>
+
+        </div>
+
+        <div class="command">Chargement du Curriculum Vitae... <span class="cursor"></span></div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js"></script>
+    <script src="https://kit.fontawesome.com/ton-code-fontawesome.js" crossorigin="anonymous"></script>
+
+    <script>
+        // Fonction pour gérer les touches fléchées et "Enter"
+        document.addEventListener('keydown', function (event) {
+            let activeLink = document.querySelector('.sidebar ul li a.clicked');
+            const toggleBtn = document.getElementById('toggle-btn');
+
+            if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+                if (activeLink) {
+                    const nextLink = (event.key === 'ArrowDown')
+                        ? activeLink.parentElement.nextElementSibling
+                        : activeLink.parentElement.previousElementSibling;
+
+                    if (nextLink) {
+                        nextLink.querySelector('a').click();
+                    }
+                } else {
+                    document.querySelector('.sidebar ul a ').click();
+                }
+            }
+
+            if (event.key === 'Enter' && activeLink) {
+                activeLink.click();
+            }
+
+            if (event.key === 'A' && event.shiftKey) {
+                const sidebar = document.getElementById('sidebar');
+                const mainWindow = document.getElementById('main-window');
+                const toggleBtn = document.getElementById('toggle-btn');
+                const item = document.querySelector('.sidebar ul');
+                sidebar.classList.toggle('show');
+                toggleBtn.classList.toggle('open');
+                item.classList.toggle('close');
+                mainWindow.classList.toggle('sidebar-visible');
+            }
+        });
+
+        // Fonction pour afficher une section spécifique
+        function showSection(sectionId) {
+            document.querySelectorAll('#content-window > div').forEach(div => div.style.display = 'none');
+            document.getElementById(sectionId).style.display = 'block';
+        }
+
+        // Ajout de l'événement de clic pour changer la classe "clicked"
+        document.querySelectorAll('.sidebar ul li a').forEach(item => {
+            item.addEventListener('click', function () {
+                document.querySelectorAll('.sidebar ul li a').forEach(link => link.classList.remove('clicked'));
+                item.classList.add('clicked');
+            });
+        });
+
+        // Gestion du toggle de la sidebar
+        document.getElementById('toggle-btn').addEventListener('click', function () {
+            const sidebar = document.getElementById('sidebar');
+            const mainWindow = document.getElementById('main-window');
+            const toggleBtn = document.getElementById('toggle-btn');
+            const item = document.querySelector('.sidebar ul');
+
+            sidebar.classList.toggle('show');
+            mainWindow.classList.toggle('sidebar-visible');
+            item.classList.toggle('close');
+            toggleBtn.classList.toggle('open');
+        });
+
+        // Galerie de QR Codes défilante
+        function showSlide(index) {
+            const slides = document.querySelectorAll('.slide');
+            const dots = document.querySelectorAll('.dot');
+
+            // Masquer toutes les images
+            slides.forEach(slide => slide.classList.remove('active'));
+
+            // Désactiver tous les points
+            dots.forEach(dot => dot.classList.remove('active'));
+
+            // Afficher l'image correspondante
+            slides[index].classList.add('active');
+
+            // Activer le point correspondant
+            dots[index].classList.add('active');
+        }
+
+        // Initialisation : afficher la première image
+        showSlide(0);
+    </script>
+</body>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+
+</html>
